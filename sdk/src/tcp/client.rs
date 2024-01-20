@@ -2,11 +2,10 @@ use crate::binary::binary_client::{BinaryClient, ClientState};
 use crate::client::Client;
 use crate::error::IggyError;
 use crate::tcp::config::TcpClientConfig;
-use async_trait::async_trait;
+
 use bytes::BufMut;
 use std::fmt::Debug;
 use std::net::SocketAddr;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -28,14 +27,14 @@ const NAME: &str = "Iggy";
 pub struct TcpClient {
     pub(crate) server_address: SocketAddr,
     pub(crate) stream: Mutex<Option<Box<dyn ConnectionStream>>>,
-    pub(crate) config: Arc<TcpClientConfig>,
+    pub(crate) config: TcpClientConfig,
     pub(crate) state: Mutex<ClientState>,
 }
 
 unsafe impl Send for TcpClient {}
 unsafe impl Sync for TcpClient {}
 
-#[async_trait]
+#[async_trait::async_trait]
 pub(crate) trait ConnectionStream: Debug + Sync + Send {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize, IggyError>;
     async fn write(&mut self, buf: &[u8]) -> Result<(), IggyError>;
@@ -57,7 +56,7 @@ unsafe impl Sync for TcpConnectionStream {}
 unsafe impl Send for TcpTlsConnectionStream {}
 unsafe impl Sync for TcpTlsConnectionStream {}
 
-#[async_trait]
+#[async_trait::async_trait]
 impl ConnectionStream for TcpConnectionStream {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize, IggyError> {
         let result = self.stream.read_exact(buf).await;
@@ -78,7 +77,7 @@ impl ConnectionStream for TcpConnectionStream {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl ConnectionStream for TcpTlsConnectionStream {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize, IggyError> {
         let result = self.stream.read_exact(buf).await;
@@ -101,12 +100,17 @@ impl ConnectionStream for TcpTlsConnectionStream {
 
 impl Default for TcpClient {
     fn default() -> Self {
-        TcpClient::create(Arc::new(TcpClientConfig::default())).unwrap()
+        TcpClient::create(TcpClientConfig::default()).unwrap()
     }
 }
 
-#[async_trait]
 impl Client for TcpClient {
+    type Config = TcpClientConfig;
+
+    fn from_config(config: Self::Config) -> Result<Self, IggyError> {
+        Self::create(config)
+    }
+
     async fn connect(&self) -> Result<(), IggyError> {
         if self.get_state().await == ClientState::Connected {
             return Ok(());
@@ -189,7 +193,6 @@ impl Client for TcpClient {
     }
 }
 
-#[async_trait]
 impl BinaryClient for TcpClient {
     async fn get_state(&self) -> ClientState {
         *self.state.lock().await
@@ -237,24 +240,24 @@ impl BinaryClient for TcpClient {
 impl TcpClient {
     /// Create a new TCP client for the provided server address.
     pub fn new(server_address: &str) -> Result<Self, IggyError> {
-        Self::create(Arc::new(TcpClientConfig {
+        Self::create(TcpClientConfig {
             server_address: server_address.to_string(),
             ..Default::default()
-        }))
+        })
     }
 
     /// Create a new TCP client for the provided server address using TLS.
     pub fn new_tls(server_address: &str, domain: &str) -> Result<Self, IggyError> {
-        Self::create(Arc::new(TcpClientConfig {
+        Self::create(TcpClientConfig {
             server_address: server_address.to_string(),
             tls_enabled: true,
             tls_domain: domain.to_string(),
             ..Default::default()
-        }))
+        })
     }
 
     /// Create a new TCP client based on the provided configuration.
-    pub fn create(config: Arc<TcpClientConfig>) -> Result<Self, IggyError> {
+    pub fn create(config: TcpClientConfig) -> Result<Self, IggyError> {
         let server_address = config.server_address.parse::<SocketAddr>()?;
 
         Ok(Self {

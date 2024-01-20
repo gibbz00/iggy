@@ -2,7 +2,7 @@ use crate::cli_command::{CliCommand, PRINT_TARGET};
 use crate::client::Client;
 use crate::personal_access_tokens::delete_personal_access_token::DeletePersonalAccessToken;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use keyring::Entry;
 use tracing::{event, Level};
 
@@ -20,7 +20,6 @@ impl DeletePersonalAccessTokenCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for DeletePersonalAccessTokenCmd {
     fn explain(&self) -> String {
         format!(
@@ -29,7 +28,7 @@ impl CliCommand for DeletePersonalAccessTokenCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .delete_personal_access_token(&self.delete_token)
             .await

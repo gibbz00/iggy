@@ -8,11 +8,9 @@ use crate::streams::get_stream::GetStream;
 use crate::streams::get_streams::GetStreams;
 use crate::streams::purge_stream::PurgeStream;
 use crate::streams::update_stream::UpdateStream;
-use async_trait::async_trait;
 
 const PATH: &str = "/streams";
 
-#[async_trait]
 impl StreamClient for HttpClient {
     async fn get_stream(&self, command: &GetStream) -> Result<StreamDetails, IggyError> {
         let response = self

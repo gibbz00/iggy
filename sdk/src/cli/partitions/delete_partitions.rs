@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::identifier::Identifier;
 use crate::partitions::delete_partitions::DeletePartitions;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct DeletePartitionsCmd {
@@ -22,7 +22,6 @@ impl DeletePartitionsCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for DeletePartitionsCmd {
     fn explain(&self) -> String {
         let mut partitions = String::from("partition");
@@ -38,7 +37,7 @@ impl CliCommand for DeletePartitionsCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let mut partitions = String::from("partition");
         if self.delete_partitions.partitions_count > 1 {
             partitions.push('s');

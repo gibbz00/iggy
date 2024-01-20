@@ -11,7 +11,6 @@ use crate::personal_access_tokens::delete_personal_access_token::DeletePersonalA
 use crate::personal_access_tokens::get_personal_access_tokens::GetPersonalAccessTokens;
 use crate::personal_access_tokens::login_with_personal_access_token::LoginWithPersonalAccessToken;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> PersonalAccessTokenClient for B {
     async fn get_personal_access_tokens(
         &self,

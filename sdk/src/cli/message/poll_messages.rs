@@ -5,7 +5,7 @@ use crate::identifier::Identifier;
 use crate::messages::poll_messages::{PollMessages, PollingStrategy};
 use crate::utils::{byte_size::IggyByteSize, duration::IggyDuration, timestamp::IggyTimestamp};
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use std::mem::size_of_val;
 use tracing::{event, Level};
@@ -49,7 +49,6 @@ impl PollMessagesCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for PollMessagesCmd {
     fn explain(&self) -> String {
         format!(
@@ -58,7 +57,7 @@ impl CliCommand for PollMessagesCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let start = std::time::Instant::now();
         let messages = client
             .poll_messages(&self.poll_messages)

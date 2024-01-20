@@ -15,7 +15,6 @@ use crate::topics::get_topics::GetTopics;
 use crate::topics::purge_topic::PurgeTopic;
 use crate::topics::update_topic::UpdateTopic;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> TopicClient for B {
     async fn get_topic(&self, command: &GetTopic) -> Result<TopicDetails, IggyError> {
         fail_if_not_authenticated(self).await?;

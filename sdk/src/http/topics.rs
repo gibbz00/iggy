@@ -8,9 +8,7 @@ use crate::topics::get_topic::GetTopic;
 use crate::topics::get_topics::GetTopics;
 use crate::topics::purge_topic::PurgeTopic;
 use crate::topics::update_topic::UpdateTopic;
-use async_trait::async_trait;
 
-#[async_trait]
 impl TopicClient for HttpClient {
     async fn get_topic(&self, command: &GetTopic) -> Result<TopicDetails, IggyError> {
         let response = self

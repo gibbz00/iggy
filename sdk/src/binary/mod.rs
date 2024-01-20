@@ -13,7 +13,7 @@ pub mod system;
 pub mod topics;
 pub mod users;
 
-async fn fail_if_not_authenticated(client: &dyn BinaryClient) -> Result<(), IggyError> {
+async fn fail_if_not_authenticated(client: &impl BinaryClient) -> Result<(), IggyError> {
     if client.get_state().await != ClientState::Authenticated {
         return Err(IggyError::Unauthenticated);
     }

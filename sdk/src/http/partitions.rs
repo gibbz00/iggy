@@ -3,9 +3,7 @@ use crate::error::IggyError;
 use crate::http::client::HttpClient;
 use crate::partitions::create_partitions::CreatePartitions;
 use crate::partitions::delete_partitions::DeletePartitions;
-use async_trait::async_trait;
 
-#[async_trait]
 impl PartitionClient for HttpClient {
     async fn create_partitions(&self, command: &CreatePartitions) -> Result<(), IggyError> {
         self.post(

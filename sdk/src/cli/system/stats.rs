@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::system::get_stats::GetStats;
 use crate::utils::byte_size::IggyByteSize;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use chrono::{DateTime, Utc};
 use comfy_table::Table;
 use humantime::format_duration;
@@ -28,13 +28,12 @@ impl Default for GetStatsCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetStatsCmd {
     fn explain(&self) -> String {
         "stats command".to_owned()
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let stats = client
             .get_stats(&self.get_stats)
             .await

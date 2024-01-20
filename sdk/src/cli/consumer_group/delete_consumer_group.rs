@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::consumer_groups::delete_consumer_group::DeleteConsumerGroup;
 use crate::identifier::Identifier;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct DeleteConsumerGroupCmd {
@@ -22,7 +22,6 @@ impl DeleteConsumerGroupCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for DeleteConsumerGroupCmd {
     fn explain(&self) -> String {
         format!(
@@ -33,7 +32,7 @@ impl CliCommand for DeleteConsumerGroupCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .delete_consumer_group(&self.delete_consumer_group)
             .await

@@ -4,7 +4,7 @@ use crate::identifier::Identifier;
 use crate::topics::get_topic::GetTopic;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -23,7 +23,6 @@ impl GetTopicCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetTopicCmd {
     fn explain(&self) -> String {
         format!(
@@ -32,7 +31,7 @@ impl CliCommand for GetTopicCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let topic = client.get_topic(&self.get_topic).await.with_context(|| {
             format!(
                 "Problem getting topic with ID: {} in stream {}",

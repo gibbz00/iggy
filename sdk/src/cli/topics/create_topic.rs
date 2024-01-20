@@ -5,7 +5,7 @@ use crate::identifier::Identifier;
 use crate::topics::create_topic::CreateTopic;
 use crate::utils::byte_size::IggyByteSize;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use core::fmt;
 use tracing::{event, Level};
 
@@ -43,13 +43,12 @@ impl CreateTopicCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for CreateTopicCmd {
     fn explain(&self) -> String {
         format!("{}", self)
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .create_topic(&self.create_topic)
             .await

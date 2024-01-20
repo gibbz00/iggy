@@ -2,12 +2,11 @@ use crate::client::Client;
 use crate::error::IggyError;
 use crate::http::config::HttpClientConfig;
 use crate::models::identity_info::IdentityInfo;
-use async_trait::async_trait;
+
 use reqwest::{Response, Url};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use serde::Serialize;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 const UNAUTHORIZED_PATHS: &[&str] = &[
@@ -30,8 +29,13 @@ pub struct HttpClient {
     refresh_token: RwLock<String>,
 }
 
-#[async_trait]
 impl Client for HttpClient {
+    type Config = HttpClientConfig;
+
+    fn from_config(config: Self::Config) -> Result<Self, IggyError> {
+        HttpClient::create(&config).map_err(Into::into)
+    }
+
     async fn connect(&self) -> Result<(), IggyError> {
         Ok(())
     }
@@ -45,21 +49,21 @@ unsafe impl Sync for HttpClient {}
 
 impl Default for HttpClient {
     fn default() -> Self {
-        HttpClient::create(Arc::new(HttpClientConfig::default())).unwrap()
+        HttpClient::create(&HttpClientConfig::default()).unwrap()
     }
 }
 
 impl HttpClient {
     /// Create a new HTTP client for interacting with the Iggy API using the provided API URL.
     pub fn new(api_url: &str) -> Result<Self, IggyError> {
-        Self::create(Arc::new(HttpClientConfig {
+        Self::create(&HttpClientConfig {
             api_url: api_url.to_string(),
             ..Default::default()
-        }))
+        })
     }
 
     /// Create a new HTTP client for interacting with the Iggy API using the provided configuration.
-    pub fn create(config: Arc<HttpClientConfig>) -> Result<Self, IggyError> {
+    pub fn create(config: &HttpClientConfig) -> Result<Self, IggyError> {
         let api_url = Url::parse(&config.api_url);
         if api_url.is_err() {
             return Err(IggyError::CannotParseUrl);

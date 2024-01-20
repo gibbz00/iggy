@@ -4,7 +4,7 @@ use crate::identifier::Identifier;
 use crate::models::user_status::UserStatus;
 use crate::users::update_user::UpdateUser;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 #[derive(Debug, Clone)]
@@ -43,7 +43,6 @@ impl UpdateUserCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for UpdateUserCmd {
     fn explain(&self) -> String {
         format!(
@@ -53,7 +52,7 @@ impl CliCommand for UpdateUserCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .update_user(&self.update_user)
             .await

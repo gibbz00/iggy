@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::identifier::Identifier;
 use crate::messages::send_messages::{Message, Partitioning, SendMessages};
 use anyhow::Context;
-use async_trait::async_trait;
+
 use std::io::{self, Read};
 use std::vec::Vec;
 use tracing::{event, Level};
@@ -52,7 +52,6 @@ impl SendMessagesCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for SendMessagesCmd {
     fn explain(&self) -> String {
         format!(
@@ -61,7 +60,7 @@ impl CliCommand for SendMessagesCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let messages = match &self.messages {
             Some(messages) => messages
                 .iter()

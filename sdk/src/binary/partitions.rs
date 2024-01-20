@@ -7,7 +7,6 @@ use crate::error::IggyError;
 use crate::partitions::create_partitions::CreatePartitions;
 use crate::partitions::delete_partitions::DeletePartitions;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> PartitionClient for B {
     async fn create_partitions(&self, command: &CreatePartitions) -> Result<(), IggyError> {
         fail_if_not_authenticated(self).await?;

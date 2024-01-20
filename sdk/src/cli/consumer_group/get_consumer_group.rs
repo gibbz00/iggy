@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::consumer_groups::get_consumer_group::GetConsumerGroup;
 use crate::identifier::Identifier;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::{presets::ASCII_NO_BORDERS, Table};
 use tracing::{event, Level};
 
@@ -23,7 +23,6 @@ impl GetConsumerGroupCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetConsumerGroupCmd {
     fn explain(&self) -> String {
         format!(
@@ -34,7 +33,7 @@ impl CliCommand for GetConsumerGroupCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let consumer_group = client
             .get_consumer_group(&self.get_consumer_group)
             .await

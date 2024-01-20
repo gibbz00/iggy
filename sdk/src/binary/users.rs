@@ -16,7 +16,6 @@ use crate::users::logout_user::LogoutUser;
 use crate::users::update_permissions::UpdatePermissions;
 use crate::users::update_user::UpdateUser;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> UserClient for B {
     async fn get_user(&self, command: &GetUser) -> Result<UserInfoDetails, IggyError> {
         fail_if_not_authenticated(self).await?;

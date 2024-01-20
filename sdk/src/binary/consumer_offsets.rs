@@ -8,7 +8,6 @@ use crate::consumer_offsets::store_consumer_offset::StoreConsumerOffset;
 use crate::error::IggyError;
 use crate::models::consumer_offset_info::ConsumerOffsetInfo;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> ConsumerOffsetClient for B {
     async fn store_consumer_offset(&self, command: &StoreConsumerOffset) -> Result<(), IggyError> {
         fail_if_not_authenticated(self).await?;

@@ -2,7 +2,7 @@ use crate::binary::binary_client::{BinaryClient, ClientState};
 use crate::client::Client;
 use crate::error::IggyError;
 use crate::quic::config::QuicClientConfig;
-use async_trait::async_trait;
+
 use bytes::BufMut;
 use quinn::{ClientConfig, Connection, Endpoint, IdleTimeout, RecvStream, VarInt};
 use rustls::client::{ServerCertVerified, ServerCertVerifier};
@@ -24,7 +24,7 @@ const NAME: &str = "Iggy";
 pub struct QuicClient {
     pub(crate) endpoint: Endpoint,
     pub(crate) connection: Mutex<Option<Connection>>,
-    pub(crate) config: Arc<QuicClientConfig>,
+    pub(crate) config: QuicClientConfig,
     pub(crate) server_address: SocketAddr,
     pub(crate) state: Mutex<ClientState>,
 }
@@ -34,12 +34,17 @@ unsafe impl Sync for QuicClient {}
 
 impl Default for QuicClient {
     fn default() -> Self {
-        QuicClient::create(Arc::new(QuicClientConfig::default())).unwrap()
+        QuicClient::create(QuicClientConfig::default()).unwrap()
     }
 }
 
-#[async_trait]
 impl Client for QuicClient {
+    type Config = QuicClientConfig;
+
+    fn from_config(config: Self::Config) -> Result<Self, IggyError> {
+        Self::create(config)
+    }
+
     async fn connect(&self) -> Result<(), IggyError> {
         if self.get_state().await == ClientState::Connected {
             return Ok(());
@@ -103,7 +108,6 @@ impl Client for QuicClient {
     }
 }
 
-#[async_trait]
 impl BinaryClient for QuicClient {
     async fn get_state(&self) -> ClientState {
         *self.state.lock().await
@@ -146,17 +150,17 @@ impl QuicClient {
         server_name: &str,
         validate_certificate: bool,
     ) -> Result<Self, IggyError> {
-        Self::create(Arc::new(QuicClientConfig {
+        Self::create(QuicClientConfig {
             client_address: client_address.to_string(),
             server_address: server_address.to_string(),
             server_name: server_name.to_string(),
             validate_certificate,
             ..Default::default()
-        }))
+        })
     }
 
     /// Create a new QUIC client for the provided configuration.
-    pub fn create(config: Arc<QuicClientConfig>) -> Result<Self, IggyError> {
+    pub fn create(config: QuicClientConfig) -> Result<Self, IggyError> {
         let server_address = config.server_address.parse::<SocketAddr>()?;
         let client_address = if server_address.is_ipv6()
             && config.client_address == QuicClientConfig::default().client_address

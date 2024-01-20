@@ -7,11 +7,9 @@ use crate::personal_access_tokens::create_personal_access_token::CreatePersonalA
 use crate::personal_access_tokens::delete_personal_access_token::DeletePersonalAccessToken;
 use crate::personal_access_tokens::get_personal_access_tokens::GetPersonalAccessTokens;
 use crate::personal_access_tokens::login_with_personal_access_token::LoginWithPersonalAccessToken;
-use async_trait::async_trait;
 
 const PATH: &str = "/personal-access-tokens";
 
-#[async_trait]
 impl PersonalAccessTokenClient for HttpClient {
     async fn get_personal_access_tokens(
         &self,

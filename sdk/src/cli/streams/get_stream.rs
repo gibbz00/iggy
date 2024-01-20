@@ -4,7 +4,7 @@ use crate::identifier::Identifier;
 use crate::streams::get_stream::GetStream;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -20,13 +20,12 @@ impl GetStreamCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetStreamCmd {
     fn explain(&self) -> String {
         format!("get stream with ID: {}", self.get_stream.stream_id)
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let stream = client.get_stream(&self.get_stream).await.with_context(|| {
             format!(
                 "Problem getting stream with ID: {}",

@@ -1,3 +1,4 @@
+use crate::client_provider::ClientConfig;
 use crate::consumer_groups::create_consumer_group::CreateConsumerGroup;
 use crate::consumer_groups::delete_consumer_group::DeleteConsumerGroup;
 use crate::consumer_groups::get_consumer_group::GetConsumerGroup;
@@ -51,13 +52,11 @@ use crate::users::login_user::LoginUser;
 use crate::users::logout_user::LogoutUser;
 use crate::users::update_permissions::UpdatePermissions;
 use crate::users::update_user::UpdateUser;
-use async_trait::async_trait;
 use std::fmt::Debug;
 
 /// The client is the main interface to the Iggy server.
 /// It consists of multiple modules, each of which is responsible for a specific set of commands.
 /// Except the ping, login and get me commands, all the other commands require authentication.
-#[async_trait]
 pub trait Client:
     SystemClient
     + UserClient
@@ -68,10 +67,15 @@ pub trait Client:
     + MessageClient
     + ConsumerOffsetClient
     + ConsumerGroupClient
+    + Sized
     + Sync
     + Send
     + Debug
 {
+    type Config: ClientConfig;
+
+    fn from_config(config: Self::Config) -> Result<Self, IggyError>;
+
     /// Connect to the server. Depending on the selected transport and provided configuration it might also perform authentication, retry logic etc.
     /// If the client is already connected, it will do nothing.
     async fn connect(&self) -> Result<(), IggyError>;
@@ -81,7 +85,6 @@ pub trait Client:
 }
 
 /// This trait defines the methods to interact with the system module.
-#[async_trait]
 pub trait SystemClient {
     /// Get the stats of the system such as PID, memory usage, streams count etc.
     ///
@@ -104,7 +107,6 @@ pub trait SystemClient {
 }
 
 /// This trait defines the methods to interact with the user module.
-#[async_trait]
 pub trait UserClient {
     /// Get the info about a specific user by unique ID or username.
     ///
@@ -141,7 +143,6 @@ pub trait UserClient {
 }
 
 /// This trait defines the methods to interact with the personal access token module.
-#[async_trait]
 pub trait PersonalAccessTokenClient {
     /// Get the info about all the personal access tokens of the currently authenticated user.
     async fn get_personal_access_tokens(
@@ -166,7 +167,6 @@ pub trait PersonalAccessTokenClient {
 }
 
 /// This trait defines the methods to interact with the stream module.
-#[async_trait]
 pub trait StreamClient {
     /// Get the info about a specific stream by unique ID or name.
     ///
@@ -195,7 +195,6 @@ pub trait StreamClient {
 }
 
 /// This trait defines the methods to interact with the topic module.
-#[async_trait]
 pub trait TopicClient {
     /// Get the info about a specific topic by unique ID or name.
     ///
@@ -224,7 +223,6 @@ pub trait TopicClient {
 }
 
 /// This trait defines the methods to interact with the partition module.
-#[async_trait]
 pub trait PartitionClient {
     /// Create new N partitions for a topic by unique ID or name.
     ///
@@ -241,7 +239,6 @@ pub trait PartitionClient {
 }
 
 /// This trait defines the methods to interact with the messaging module.
-#[async_trait]
 pub trait MessageClient {
     /// Poll given amount of messages using the specified consumer and strategy from the specified stream and topic by unique IDs or names.
     ///
@@ -254,7 +251,6 @@ pub trait MessageClient {
 }
 
 /// This trait defines the methods to interact with the consumer offset module.
-#[async_trait]
 pub trait ConsumerOffsetClient {
     /// Store the consumer offset for a specific consumer or consumer group for the given stream and topic by unique IDs or names.
     ///
@@ -270,7 +266,6 @@ pub trait ConsumerOffsetClient {
 }
 
 /// This trait defines the methods to interact with the consumer group module.
-#[async_trait]
 pub trait ConsumerGroupClient {
     /// Get the info about a specific consumer group by unique ID or name for the given stream and topic by unique IDs or names.
     ///

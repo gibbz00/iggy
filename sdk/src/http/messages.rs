@@ -4,9 +4,7 @@ use crate::http::client::HttpClient;
 use crate::messages::poll_messages::PollMessages;
 use crate::messages::send_messages::SendMessages;
 use crate::models::messages::PolledMessages;
-use async_trait::async_trait;
 
-#[async_trait]
 impl MessageClient for HttpClient {
     async fn poll_messages(&self, command: &PollMessages) -> Result<PolledMessages, IggyError> {
         let response = self

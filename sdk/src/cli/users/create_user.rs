@@ -4,7 +4,7 @@ use crate::models::permissions::Permissions;
 use crate::models::user_status::UserStatus;
 use crate::users::create_user::CreateUser;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct CreateUserCmd {
@@ -29,7 +29,6 @@ impl CreateUserCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for CreateUserCmd {
     fn explain(&self) -> String {
         format!(
@@ -38,7 +37,7 @@ impl CliCommand for CreateUserCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .create_user(&self.create_user)
             .await

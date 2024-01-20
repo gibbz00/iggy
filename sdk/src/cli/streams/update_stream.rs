@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::identifier::Identifier;
 use crate::streams::update_stream::UpdateStream;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct UpdateStreamCmd {
@@ -18,7 +18,6 @@ impl UpdateStreamCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for UpdateStreamCmd {
     fn explain(&self) -> String {
         format!(
@@ -27,7 +26,7 @@ impl CliCommand for UpdateStreamCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .update_stream(&self.update_stream)
             .await

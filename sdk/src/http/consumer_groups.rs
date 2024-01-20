@@ -8,9 +8,7 @@ use crate::consumer_groups::leave_consumer_group::LeaveConsumerGroup;
 use crate::error::IggyError;
 use crate::http::client::HttpClient;
 use crate::models::consumer_group::{ConsumerGroup, ConsumerGroupDetails};
-use async_trait::async_trait;
 
-#[async_trait]
 impl ConsumerGroupClient for HttpClient {
     async fn get_consumer_group(
         &self,

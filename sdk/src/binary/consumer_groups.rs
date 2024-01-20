@@ -15,7 +15,6 @@ use crate::consumer_groups::leave_consumer_group::LeaveConsumerGroup;
 use crate::error::IggyError;
 use crate::models::consumer_group::{ConsumerGroup, ConsumerGroupDetails};
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> ConsumerGroupClient for B {
     async fn get_consumer_group(
         &self,

@@ -8,13 +8,11 @@ use crate::system::get_clients::GetClients;
 use crate::system::get_me::GetMe;
 use crate::system::get_stats::GetStats;
 use crate::system::ping::Ping;
-use async_trait::async_trait;
 
 const PING: &str = "/ping";
 const CLIENTS: &str = "/clients";
 const STATS: &str = "/stats";
 
-#[async_trait]
 impl SystemClient for HttpClient {
     async fn get_stats(&self, _command: &GetStats) -> Result<Stats, IggyError> {
         let response = self.get(STATS).await?;

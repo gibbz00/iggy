@@ -15,7 +15,6 @@ use crate::streams::get_streams::GetStreams;
 use crate::streams::purge_stream::PurgeStream;
 use crate::streams::update_stream::UpdateStream;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> StreamClient for B {
     async fn get_stream(&self, command: &GetStream) -> Result<StreamDetails, IggyError> {
         fail_if_not_authenticated(self).await?;

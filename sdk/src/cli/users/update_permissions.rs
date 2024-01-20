@@ -4,7 +4,7 @@ use crate::identifier::Identifier;
 use crate::models::permissions::Permissions;
 use crate::users::update_permissions::UpdatePermissions;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct UpdatePermissionsCmd {
@@ -22,7 +22,6 @@ impl UpdatePermissionsCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for UpdatePermissionsCmd {
     fn explain(&self) -> String {
         format!(
@@ -31,7 +30,7 @@ impl CliCommand for UpdatePermissionsCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .update_permissions(&self.update_permissions)
             .await

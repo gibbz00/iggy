@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::personal_access_tokens::get_personal_access_tokens::GetPersonalAccessTokens;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -26,7 +26,6 @@ impl GetPersonalAccessTokensCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetPersonalAccessTokensCmd {
     fn explain(&self) -> String {
         let mode = match self.output {
@@ -36,7 +35,7 @@ impl CliCommand for GetPersonalAccessTokensCmd {
         format!("list personal access tokens in {mode} mode")
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let tokens = client
             .get_personal_access_tokens(&self.get_tokens)
             .await

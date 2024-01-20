@@ -2,7 +2,6 @@ use crate::cli_command::{CliCommand, PRINT_TARGET};
 use crate::client::Client;
 use crate::system::get_client::GetClient;
 use anyhow::Context;
-use async_trait::async_trait;
 use comfy_table::{presets::ASCII_NO_BORDERS, Table};
 use tracing::{event, Level};
 
@@ -18,13 +17,12 @@ impl GetClientCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetClientCmd {
     fn explain(&self) -> String {
         format!("get client with ID: {}", self.get_client.client_id)
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let client_details = client.get_client(&self.get_client).await.with_context(|| {
             format!(
                 "Problem getting client with ID: {}",

@@ -44,7 +44,6 @@ use crate::system::get_clients::GetClients;
 use crate::system::get_me::GetMe;
 use crate::system::get_stats::GetStats;
 use crate::system::ping::Ping;
-use crate::tcp::client::TcpClient;
 use crate::topics::create_topic::CreateTopic;
 use crate::topics::delete_topic::DeleteTopic;
 use crate::topics::get_topic::GetTopic;
@@ -62,7 +61,7 @@ use crate::users::update_permissions::UpdatePermissions;
 use crate::users::update_user::UpdateUser;
 use crate::utils::crypto::Encryptor;
 use async_dropper::AsyncDrop;
-use async_trait::async_trait;
+
 use bytes::Bytes;
 use flume::{Receiver, Sender};
 use std::collections::VecDeque;
@@ -77,8 +76,8 @@ use tracing::{error, info, warn};
 /// The main client struct which implements all the `Client` traits and wraps the underlying low-level client for the specific transport.
 /// It also provides additional functionality (outside of the shared trait) like sending messages in background, partitioning, client-side encryption or message handling via channels.
 #[derive(Debug)]
-pub struct IggyClient {
-    client: Arc<RwLock<Box<dyn Client>>>,
+pub struct IggyClient<C: Client> {
+    client: Arc<RwLock<C>>,
     config: Option<IggyClientConfig>,
     send_messages_batch: Option<Arc<Mutex<SendMessagesBatch>>>,
     partitioner: Option<Box<dyn Partitioner>>,
@@ -89,14 +88,14 @@ pub struct IggyClient {
 
 /// The builder for the `IggyClient` instance, which allows to configure and provide custom implementations for the partitioner, encryptor or message handler.
 #[derive(Debug)]
-pub struct IggyClientBuilder {
-    client: IggyClient,
+pub struct IggyClientBuilder<C: Client> {
+    client: IggyClient<C>,
 }
 
-impl IggyClientBuilder {
+impl<C: Client> IggyClientBuilder<C> {
     /// Creates a new `IggyClientBuilder` with the provided client implementation for the specific transport.
     #[must_use]
-    pub fn new(client: Box<dyn Client>) -> Self {
+    pub fn new(client: C) -> Self {
         IggyClientBuilder {
             client: IggyClient::new(client),
         }
@@ -127,7 +126,7 @@ impl IggyClientBuilder {
     }
 
     /// Build the `IggyClient` instance.
-    pub fn build(self) -> IggyClient {
+    pub fn build(self) -> IggyClient<C> {
         self.client
     }
 }
@@ -198,20 +197,20 @@ impl Default for PollMessagesConfig {
     }
 }
 
-impl Default for IggyClient {
+impl<C: Client + Default> Default for IggyClient<C> {
     fn default() -> Self {
-        IggyClient::new(Box::<TcpClient>::default())
+        IggyClient::new(C::default())
     }
 }
 
-impl IggyClient {
+impl<C: Client> IggyClient<C> {
     /// Creates a new `IggyClientBuilder` with the provided client implementation for the specific transport.
-    pub fn builder(client: Box<dyn Client>) -> IggyClientBuilder {
+    pub fn builder(client: C) -> IggyClientBuilder<C> {
         IggyClientBuilder::new(client)
     }
 
     /// Creates a new `IggyClient` with the provided client implementation for the specific transport.
-    pub fn new(client: Box<dyn Client>) -> Self {
+    pub fn new(client: C) -> Self {
         IggyClient {
             client: Arc::new(RwLock::new(client)),
             config: None,
@@ -226,7 +225,7 @@ impl IggyClient {
     /// Creates a new `IggyClient` with the provided client implementation for the specific transport and the optional configuration for sending and polling the messages in the background.
     /// Additionally it allows to provide the custom implementations for the message handler, partitioner and encryptor.
     pub fn create(
-        client: Box<dyn Client>,
+        client: C,
         config: IggyClientConfig,
         message_handler: Option<Box<dyn MessageHandler>>,
         partitioner: Option<Box<dyn Partitioner>>,
@@ -345,12 +344,12 @@ impl IggyClient {
                         warn!("Received a message with ID: {} at offset: {} which won't be processed. Consider providing the custom `MessageHandler` trait implementation or `on_message` closure.", message.id, message.offset);
                     }
                     if store_offset_after_processing_each_message {
-                        Self::store_offset(client.as_ref(), &poll_messages, current_offset).await;
+                        Self::store_offset(&*client, &poll_messages, current_offset).await;
                     }
                 }
 
                 if store_offset_when_messages_are_processed {
-                    Self::store_offset(client.as_ref(), &poll_messages, current_offset).await;
+                    Self::store_offset(&*client, &poll_messages, current_offset).await;
                 }
 
                 if poll_messages.strategy.kind == PollingKind::Offset {
@@ -376,7 +375,7 @@ impl IggyClient {
         self.send_messages(command).await
     }
 
-    async fn store_offset(client: &dyn Client, poll_messages: &PollMessages, offset: u64) {
+    async fn store_offset(client: &impl Client, poll_messages: &PollMessages, offset: u64) {
         let result = client
             .store_consumer_offset(&StoreConsumerOffset {
                 consumer: Consumer::from_consumer(&poll_messages.consumer),
@@ -394,7 +393,7 @@ impl IggyClient {
     fn send_messages_in_background(
         interval: u64,
         max_messages: u32,
-        client: Arc<RwLock<Box<dyn Client>>>,
+        client: Arc<RwLock<C>>,
         send_messages_batch: Arc<Mutex<SendMessagesBatch>>,
     ) {
         tokio::spawn(async move {
@@ -492,8 +491,7 @@ impl IggyClient {
     }
 }
 
-#[async_trait]
-impl UserClient for IggyClient {
+impl<C: Client> UserClient for IggyClient<C> {
     async fn get_user(&self, command: &GetUser) -> Result<UserInfoDetails, IggyError> {
         self.client.read().await.get_user(command).await
     }
@@ -531,8 +529,7 @@ impl UserClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl PersonalAccessTokenClient for IggyClient {
+impl<C: Client> PersonalAccessTokenClient for IggyClient<C> {
     async fn get_personal_access_tokens(
         &self,
         command: &GetPersonalAccessTokens,
@@ -578,8 +575,14 @@ impl PersonalAccessTokenClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl Client for IggyClient {
+impl<C: Client + Default> Client for IggyClient<C> {
+    type Config = IggyClientConfig;
+
+    // HELP: Don't think IggyClient should implement Client, this acts as stub
+    fn from_config(config: Self::Config) -> Result<Self, IggyError> {
+        Ok(Self::builder(C::default()).build())
+    }
+
     async fn connect(&self) -> Result<(), IggyError> {
         self.client.read().await.connect().await
     }
@@ -589,8 +592,7 @@ impl Client for IggyClient {
     }
 }
 
-#[async_trait]
-impl SystemClient for IggyClient {
+impl<C: Client> SystemClient for IggyClient<C> {
     async fn get_stats(&self, command: &GetStats) -> Result<Stats, IggyError> {
         self.client.read().await.get_stats(command).await
     }
@@ -612,8 +614,7 @@ impl SystemClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl StreamClient for IggyClient {
+impl<C: Client> StreamClient for IggyClient<C> {
     async fn get_stream(&self, command: &GetStream) -> Result<StreamDetails, IggyError> {
         self.client.read().await.get_stream(command).await
     }
@@ -639,8 +640,7 @@ impl StreamClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl TopicClient for IggyClient {
+impl<C: Client> TopicClient for IggyClient<C> {
     async fn get_topic(&self, command: &GetTopic) -> Result<TopicDetails, IggyError> {
         self.client.read().await.get_topic(command).await
     }
@@ -666,8 +666,7 @@ impl TopicClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl PartitionClient for IggyClient {
+impl<C: Client> PartitionClient for IggyClient<C> {
     async fn create_partitions(&self, command: &CreatePartitions) -> Result<(), IggyError> {
         self.client.read().await.create_partitions(command).await
     }
@@ -677,8 +676,7 @@ impl PartitionClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl MessageClient for IggyClient {
+impl<C: Client> MessageClient for IggyClient<C> {
     async fn poll_messages(&self, command: &PollMessages) -> Result<PolledMessages, IggyError> {
         let mut polled_messages = self.client.read().await.poll_messages(command).await?;
         if let Some(ref encryptor) = self.encryptor {
@@ -745,8 +743,7 @@ impl MessageClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl ConsumerOffsetClient for IggyClient {
+impl<C: Client> ConsumerOffsetClient for IggyClient<C> {
     async fn store_consumer_offset(&self, command: &StoreConsumerOffset) -> Result<(), IggyError> {
         self.client
             .read()
@@ -763,8 +760,7 @@ impl ConsumerOffsetClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl ConsumerGroupClient for IggyClient {
+impl<C: Client> ConsumerGroupClient for IggyClient<C> {
     async fn get_consumer_group(
         &self,
         command: &GetConsumerGroup,
@@ -804,8 +800,8 @@ impl ConsumerGroupClient for IggyClient {
     }
 }
 
-#[async_trait]
-impl AsyncDrop for IggyClient {
+#[async_trait::async_trait]
+impl<C: Client> AsyncDrop for IggyClient<C> {
     async fn async_drop(&mut self) {
         let _ = self.client.read().await.logout_user(&LogoutUser {}).await;
     }

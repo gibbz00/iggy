@@ -12,12 +12,11 @@ use crate::users::login_user::LoginUser;
 use crate::users::logout_user::LogoutUser;
 use crate::users::update_permissions::UpdatePermissions;
 use crate::users::update_user::UpdateUser;
-use async_trait::async_trait;
+
 use serde::Serialize;
 
 const PATH: &str = "/users";
 
-#[async_trait]
 impl UserClient for HttpClient {
     async fn get_user(&self, command: &GetUser) -> Result<UserInfoDetails, IggyError> {
         let response = self.get(&format!("{PATH}/{}", command.user_id)).await?;

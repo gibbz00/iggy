@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::identifier::Identifier;
 use crate::users::delete_user::DeleteUser;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use tracing::{event, Level};
 
 pub struct DeleteUserCmd {
@@ -18,13 +18,12 @@ impl DeleteUserCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for DeleteUserCmd {
     fn explain(&self) -> String {
         format!("delete user with ID: {}", self.delete_user.user_id)
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         client
             .delete_user(&self.delete_user)
             .await

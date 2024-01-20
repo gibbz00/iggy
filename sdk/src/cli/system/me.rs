@@ -2,7 +2,7 @@ use crate::cli_command::{CliCommand, PRINT_TARGET};
 use crate::client::Client;
 use crate::system::get_me::GetMe;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -22,13 +22,12 @@ impl Default for GetMeCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetMeCmd {
     fn explain(&self) -> String {
         "me command".to_owned()
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let client_info = client
             .get_me(&self.get_me)
             .await

@@ -5,7 +5,7 @@ use crate::models::permissions::{GlobalPermissions, StreamPermissions, TopicPerm
 use crate::users::get_user::GetUser;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::presets::ASCII_NO_BORDERS;
 use comfy_table::Table;
 use tracing::{event, Level};
@@ -130,13 +130,12 @@ impl GetUserCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetUserCmd {
     fn explain(&self) -> String {
         format!("get user with ID: {}", self.get_user.user_id)
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let user = client
             .get_user(&self.get_user)
             .await

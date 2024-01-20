@@ -2,7 +2,7 @@ use crate::cli_command::{CliCommand, PRINT_TARGET};
 use crate::client::Client;
 use crate::system::ping::Ping;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use std::fmt::{Display, Formatter, Result};
 use std::time::Duration;
 use tokio::time::{sleep, Instant};
@@ -88,7 +88,6 @@ impl Display for PingStats {
     }
 }
 
-#[async_trait]
 impl CliCommand for PingCmd {
     fn explain(&self) -> String {
         "ping command".to_owned()
@@ -98,7 +97,7 @@ impl CliCommand for PingCmd {
         false
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let print_width = (self.count.ilog10() + 1) as usize;
         let mut ping_stats = PingStats::new();
 

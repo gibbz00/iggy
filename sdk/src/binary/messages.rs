@@ -8,7 +8,6 @@ use crate::messages::poll_messages::PollMessages;
 use crate::messages::send_messages::SendMessages;
 use crate::models::messages::PolledMessages;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> MessageClient for B {
     async fn poll_messages(&self, command: &PollMessages) -> Result<PolledMessages, IggyError> {
         fail_if_not_authenticated(self).await?;

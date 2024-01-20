@@ -3,7 +3,7 @@ use crate::cli_command::{CliCommand, PRINT_TARGET};
 use crate::client::Client;
 use crate::personal_access_tokens::create_personal_access_token::CreatePersonalAccessToken;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use keyring::Entry;
 use tracing::{event, Level};
 
@@ -39,7 +39,6 @@ impl CreatePersonalAccessTokenCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for CreatePersonalAccessTokenCmd {
     fn explain(&self) -> String {
         let expiry_text = match &self.token_expiry {
@@ -52,7 +51,7 @@ impl CliCommand for CreatePersonalAccessTokenCmd {
         )
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let token = client
             .create_personal_access_token(&self.create_token)
             .await

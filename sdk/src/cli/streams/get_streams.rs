@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::streams::get_streams::GetStreams;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -35,7 +35,6 @@ impl Default for GetStreamsCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetStreamsCmd {
     fn explain(&self) -> String {
         let mode = match self.output {
@@ -45,7 +44,7 @@ impl CliCommand for GetStreamsCmd {
         format!("list streams in {mode} mode")
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let streams = client
             .get_streams(&self.get_streams)
             .await

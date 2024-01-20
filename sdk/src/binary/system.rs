@@ -12,7 +12,6 @@ use crate::system::get_me::GetMe;
 use crate::system::get_stats::GetStats;
 use crate::system::ping::Ping;
 
-#[async_trait::async_trait]
 impl<B: BinaryClient> SystemClient for B {
     async fn get_stats(&self, command: &GetStats) -> Result<Stats, IggyError> {
         fail_if_not_authenticated(self).await?;

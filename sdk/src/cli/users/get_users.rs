@@ -3,7 +3,7 @@ use crate::client::Client;
 use crate::users::get_users::GetUsers;
 use crate::utils::timestamp::IggyTimestamp;
 use anyhow::Context;
-use async_trait::async_trait;
+
 use comfy_table::Table;
 use tracing::{event, Level};
 
@@ -35,7 +35,6 @@ impl Default for GetUsersCmd {
     }
 }
 
-#[async_trait]
 impl CliCommand for GetUsersCmd {
     fn explain(&self) -> String {
         let mode = match self.output {
@@ -45,7 +44,7 @@ impl CliCommand for GetUsersCmd {
         format!("list users in {mode} mode")
     }
 
-    async fn execute_cmd(&mut self, client: &dyn Client) -> anyhow::Result<(), anyhow::Error> {
+    async fn execute_cmd(&mut self, client: &impl Client) -> anyhow::Result<(), anyhow::Error> {
         let users = client
             .get_users(&self.get_users)
             .await
