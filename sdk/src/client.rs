@@ -71,6 +71,7 @@ pub trait Client:
     + Sync
     + Send
     + Debug
+    + 'static
 {
     type Config: ClientConfig;
 

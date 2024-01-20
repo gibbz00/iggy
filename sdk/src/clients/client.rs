@@ -92,7 +92,7 @@ pub struct IggyClientBuilder<C: Client> {
     client: IggyClient<C>,
 }
 
-impl<C: Client> IggyClientBuilder<C> {
+impl<C: Client + 'static> IggyClientBuilder<C> {
     /// Creates a new `IggyClientBuilder` with the provided client implementation for the specific transport.
     #[must_use]
     pub fn new(client: C) -> Self {
@@ -803,6 +803,7 @@ impl<C: Client> ConsumerGroupClient for IggyClient<C> {
 #[async_trait::async_trait]
 impl<C: Client> AsyncDrop for IggyClient<C> {
     async fn async_drop(&mut self) {
-        let _ = self.client.read().await.logout_user(&LogoutUser {}).await;
+        // TODO(XXX)!
+        // let _ = self.client.read().await.logout_user(&LogoutUser {}).await;
     }
 }

@@ -1,4 +1,3 @@
-use crate::client::Client;
 use crate::error::IggyError;
 
 /// The state of the client.
@@ -13,7 +12,7 @@ pub enum ClientState {
 }
 
 /// A client that can send and receive binary messages.
-pub trait BinaryClient: Client {
+pub trait BinaryClient {
     /// Gets the state of the client.
     async fn get_state(&self) -> ClientState;
     /// Sets the state of the client.
