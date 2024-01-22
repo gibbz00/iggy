@@ -7,18 +7,18 @@ use async_trait::async_trait;
 use colored::Colorize;
 use human_bytes::human_bytes;
 use human_format::Formatter;
-use integration::test_server::ClientFactory;
+use integration::test_server::MockClient;
 use std::fmt::Display;
 use std::sync::Arc;
 use tracing::info;
 
 pub struct SendAndPollMessagesBenchmark {
     args: Arc<IggyBenchArgs>,
-    client_factory: Arc<dyn ClientFactory>,
+    client_factory: Arc<dyn MockClient>,
 }
 
 impl SendAndPollMessagesBenchmark {
-    pub fn new(args: Arc<IggyBenchArgs>, client_factory: Arc<dyn ClientFactory>) -> Self {
+    pub fn new(args: Arc<IggyBenchArgs>, client_factory: Arc<dyn MockClient>) -> Self {
         Self {
             args,
             client_factory,
@@ -49,7 +49,6 @@ impl Display for SendAndPollMessagesBenchmark {
     }
 }
 
-#[async_trait]
 impl Benchmarkable for SendAndPollMessagesBenchmark {
     async fn run(&mut self) -> BenchmarkFutures {
         self.init_streams().await.expect("Failed to init streams!");
@@ -111,7 +110,7 @@ impl Benchmarkable for SendAndPollMessagesBenchmark {
         &self.args
     }
 
-    fn client_factory(&self) -> &Arc<dyn ClientFactory> {
+    fn client(&self) -> &Arc<dyn MockClient> {
         &self.client_factory
     }
 

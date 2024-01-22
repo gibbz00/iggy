@@ -10,7 +10,7 @@ use iggy::streams::create_stream::CreateStream;
 use iggy::system::get_me::GetMe;
 use iggy::topics::create_topic::CreateTopic;
 use integration::test_server::{
-    assert_clean_system, create_user, delete_user, login_root, login_user, ClientFactory,
+    assert_clean_system, create_user, delete_user, login_root, login_user, MockClient,
 };
 const STREAM_ID: u32 = 1;
 const TOPIC_ID: u32 = 1;
@@ -23,7 +23,7 @@ const USERNAME_1: &str = "user1";
 const USERNAME_2: &str = "user2";
 const USERNAME_3: &str = "user3";
 
-pub async fn run(client_factory: &dyn ClientFactory) {
+pub async fn run(client_factory: &dyn MockClient) {
     let system_client = create_client(client_factory).await;
 
     let client1 = create_client(client_factory).await;
@@ -170,8 +170,8 @@ async fn get_consumer_group_and_validate_members(
     consumer_group
 }
 
-async fn create_client(client_factory: &dyn ClientFactory) -> IggyClient {
-    let client = client_factory.create_client().await;
+async fn create_client(client_factory: &dyn MockClient) -> IggyClient {
+    let client = client_factory.mock().await;
     IggyClient::create(client, IggyClientConfig::default(), None, None, None)
 }
 

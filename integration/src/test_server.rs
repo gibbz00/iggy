@@ -1,5 +1,4 @@
 use assert_cmd::prelude::CommandCargoExt;
-use async_trait::async_trait;
 use derive_more::Display;
 use futures::executor::block_on;
 use iggy::client::{Client, StreamClient, UserClient};
@@ -38,12 +37,12 @@ pub enum IpAddrKind {
     V6,
 }
 
-#[async_trait]
-pub trait ClientFactory: Sync + Send {
-    async fn create_client(&self) -> Box<dyn Client>;
+pub trait MockClient: Client {
+    async fn mock(server_address: &str) -> Self;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Display)]
+// TODO: move to sdk?
 pub enum Transport {
     #[display(fmt = "http")]
     Http,
@@ -427,7 +426,7 @@ impl Default for TestServer {
     }
 }
 
-pub async fn create_user(client: &IggyClient, username: &str) {
+pub async fn create_user<C: Client>(client: &IggyClient<C>, username: &str) {
     client
         .create_user(&CreateUser {
             username: username.to_string(),
@@ -453,7 +452,7 @@ pub async fn create_user(client: &IggyClient, username: &str) {
         .unwrap();
 }
 
-pub async fn delete_user(client: &IggyClient, username: &str) {
+pub async fn delete_user<C: Client>(client: &IggyClient<C>, username: &str) {
     client
         .delete_user(&DeleteUser {
             user_id: Identifier::named(username).unwrap(),
@@ -462,7 +461,7 @@ pub async fn delete_user(client: &IggyClient, username: &str) {
         .unwrap();
 }
 
-pub async fn login_root(client: &IggyClient) {
+pub async fn login_root<C: Client>(client: &IggyClient<C>) {
     client
         .login_user(&LoginUser {
             username: DEFAULT_ROOT_USERNAME.to_string(),
@@ -472,7 +471,7 @@ pub async fn login_root(client: &IggyClient) {
         .unwrap();
 }
 
-pub async fn login_user(client: &IggyClient, username: &str) {
+pub async fn login_user<C: Client>(client: &IggyClient<C>, username: &str) {
     client
         .login_user(&LoginUser {
             username: username.to_string(),
@@ -482,7 +481,7 @@ pub async fn login_user(client: &IggyClient, username: &str) {
         .unwrap();
 }
 
-pub async fn assert_clean_system(system_client: &IggyClient) {
+pub async fn assert_clean_system<C: Client>(system_client: &IggyClient<C>) {
     let streams = system_client.get_streams(&GetStreams {}).await.unwrap();
     assert!(streams.is_empty());
 

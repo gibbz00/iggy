@@ -2,27 +2,28 @@ use super::benchmark::{BenchmarkFutures, Benchmarkable};
 use crate::args::common::IggyBenchArgs;
 use crate::args::simple::BenchmarkKind;
 use crate::consumer::Consumer;
-use async_trait::async_trait;
-use integration::test_server::ClientFactory;
+use iggy::client::Client;
+use iggy::tcp::client::TcpClient;
+use integration::test_server::MockClient;
+use std::marker::PhantomData;
 use std::sync::Arc;
 use tracing::info;
 
-pub struct PollMessagesBenchmark {
-    args: Arc<IggyBenchArgs>,
-    client_factory: Arc<dyn ClientFactory>,
+pub struct PollMessagesBenchmark<C: Client = TcpClient> {
+    args: IggyBenchArgs,
+    client_marker: PhantomData<C>,
 }
 
-impl PollMessagesBenchmark {
-    pub fn new(args: Arc<IggyBenchArgs>, client_factory: Arc<dyn ClientFactory>) -> Self {
+impl<C: Client> PollMessagesBenchmark<C> {
+    pub fn new(args: Arc<IggyBenchArgs>) -> Self {
         Self {
             args,
-            client_factory,
+            client_marker: PhantomData,
         }
     }
 }
 
-#[async_trait]
-impl Benchmarkable for PollMessagesBenchmark {
+impl<C: Client> Benchmarkable for PollMessagesBenchmark<C> {
     async fn run(&mut self) -> BenchmarkFutures {
         self.check_streams().await?;
         let clients_count = self.args.consumers();
@@ -33,24 +34,16 @@ impl Benchmarkable for PollMessagesBenchmark {
         let mut futures: BenchmarkFutures = Ok(Vec::with_capacity(clients_count as usize));
         for client_id in 1..=clients_count {
             let args = self.args.clone();
-            let client_factory = self.client_factory.clone();
             info!("Executing the benchmark on client #{}...", client_id);
             let args = args.clone();
             let start_stream_id = args.start_stream_id();
-            let client_factory = client_factory.clone();
             let parallel_consumer_streams = !args.disable_parallel_consumer_streams();
             let stream_id = match parallel_consumer_streams {
                 true => start_stream_id + client_id,
                 false => start_stream_id + 1,
             };
 
-            let consumer = Consumer::new(
-                client_factory,
-                client_id,
-                stream_id,
-                messages_per_batch,
-                message_batches,
-            );
+            let consumer = Consumer::new(client_id, stream_id, messages_per_batch, message_batches);
 
             let future = Box::pin(async move { consumer.run().await });
             futures.as_mut().unwrap().push(future);
@@ -67,7 +60,7 @@ impl Benchmarkable for PollMessagesBenchmark {
         &self.args
     }
 
-    fn client_factory(&self) -> &Arc<dyn ClientFactory> {
+    fn client(&self) -> &Arc<dyn MockClient> {
         &self.client_factory
     }
 

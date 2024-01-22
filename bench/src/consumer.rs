@@ -6,34 +6,36 @@ use iggy::consumer::Consumer as IggyConsumer;
 use iggy::error::IggyError;
 use iggy::identifier::Identifier;
 use iggy::messages::poll_messages::{PollMessages, PollingStrategy};
-use integration::test_server::{login_root, ClientFactory};
-use std::sync::Arc;
+use integration::test_server::{login_root, MockClient};
+use std::marker::PhantomData;
 use std::time::Duration;
 use tokio::time::Instant;
 use tracing::{info, trace};
 
-pub struct Consumer {
-    client_factory: Arc<dyn ClientFactory>,
+pub struct Consumer<C: MockClient> {
+    client_marker: PhantomData<C>,
     consumer_id: u32,
     stream_id: u32,
     messages_per_batch: u32,
     message_batches: u32,
+    server_address: String,
 }
 
-impl Consumer {
+impl<C: MockClient> Consumer<C> {
     pub fn new(
-        client_factory: Arc<dyn ClientFactory>,
         consumer_id: u32,
         stream_id: u32,
         messages_per_batch: u32,
         message_batches: u32,
+        server_address: String,
     ) -> Self {
         Self {
-            client_factory,
             consumer_id,
             stream_id,
             messages_per_batch,
             message_batches,
+            client_marker: PhantomData,
+            server_address,
         }
     }
 
@@ -41,7 +43,7 @@ impl Consumer {
         let topic_id: u32 = 1;
         let partition_id: u32 = 1;
         let total_messages = (self.messages_per_batch * self.message_batches) as u64;
-        let client = self.client_factory.create_client().await;
+        let client = C::mock(&self.server_address).await;
         let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
         login_root(&client).await;
         info!(

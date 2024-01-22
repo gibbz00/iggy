@@ -7,7 +7,7 @@ use integration::test_server::Transport;
 use std::net::SocketAddr;
 use std::path::Path;
 
-#[derive(Parser, Debug)]
+#[derive(Clone, Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct IggyBenchArgs {
     /// Benchmark kind

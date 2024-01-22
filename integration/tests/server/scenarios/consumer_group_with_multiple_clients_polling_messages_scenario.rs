@@ -13,7 +13,7 @@ use iggy::streams::delete_stream::DeleteStream;
 use iggy::system::get_me::GetMe;
 use iggy::topics::create_topic::CreateTopic;
 use integration::test_server::{
-    assert_clean_system, create_user, delete_user, login_root, login_user, ClientFactory,
+    assert_clean_system, create_user, delete_user, login_root, login_user, MockClient,
 };
 use std::str::{from_utf8, FromStr};
 
@@ -29,7 +29,7 @@ const USERNAME_1: &str = "user1";
 const USERNAME_2: &str = "user2";
 const USERNAME_3: &str = "user3";
 
-pub async fn run(client_factory: &dyn ClientFactory) {
+pub async fn run(client_factory: &dyn MockClient) {
     let system_client = create_client(client_factory).await;
     let client1 = create_client(client_factory).await;
     let client2 = create_client(client_factory).await;
@@ -44,8 +44,8 @@ pub async fn run(client_factory: &dyn ClientFactory) {
     assert_clean_system(&system_client).await;
 }
 
-async fn create_client(client_factory: &dyn ClientFactory) -> IggyClient {
-    let client = client_factory.create_client().await;
+async fn create_client(client_factory: &dyn MockClient) -> IggyClient {
+    let client = client_factory.mock().await;
     IggyClient::create(client, IggyClientConfig::default(), None, None, None)
 }
 

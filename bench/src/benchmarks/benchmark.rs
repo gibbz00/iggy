@@ -5,7 +5,6 @@ use super::{
 use crate::{
     args::{common::IggyBenchArgs, simple::BenchmarkKind},
     benchmark_result::BenchmarkResult,
-    client_factory::create_client_factory,
 };
 use async_trait::async_trait;
 use futures::Future;
@@ -17,7 +16,7 @@ use iggy::{
     streams::{create_stream::CreateStream, get_streams::GetStreams},
     topics::create_topic::CreateTopic,
 };
-use integration::test_server::{login_root, ClientFactory};
+use integration::test_server::{login_root, MockClient};
 use std::{pin::Pin, sync::Arc};
 use tracing::info;
 
@@ -26,31 +25,14 @@ pub type BenchmarkFutures = Result<
     IggyError,
 >;
 
-impl From<IggyBenchArgs> for Box<dyn Benchmarkable> {
-    fn from(args: IggyBenchArgs) -> Self {
-        let client_factory = create_client_factory(&args);
-        let benchmark_kind = args.benchmark_kind.as_simple_kind();
-        match benchmark_kind {
-            BenchmarkKind::Poll => {
-                Box::new(PollMessagesBenchmark::new(Arc::new(args), client_factory))
-            }
-            BenchmarkKind::Send => {
-                Box::new(SendMessagesBenchmark::new(Arc::new(args), client_factory))
-            }
-            BenchmarkKind::SendAndPoll => Box::new(SendAndPollMessagesBenchmark::new(
-                Arc::new(args),
-                client_factory,
-            )),
-        }
-    }
-}
-
-#[async_trait]
 pub trait Benchmarkable {
+    type BenchArgs;
+
+    fn new(bench_args: Self::BenchArgs) -> Self;
+
     async fn run(&mut self) -> BenchmarkFutures;
     fn kind(&self) -> BenchmarkKind;
     fn args(&self) -> &IggyBenchArgs;
-    fn client_factory(&self) -> &Arc<dyn ClientFactory>;
     fn display_settings(&self);
 
     /// Below methods have common implementation for all benchmarks.
@@ -62,7 +44,7 @@ pub trait Benchmarkable {
         let number_of_streams = self.args().number_of_streams();
         let topic_id: u32 = 1;
         let partitions_count: u32 = 1;
-        let client = self.client_factory().create_client().await;
+        let client = self.client().mock().await;
         let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
         login_root(&client).await;
         let streams = client.get_streams(&GetStreams {}).await?;
@@ -102,7 +84,7 @@ pub trait Benchmarkable {
     async fn check_streams(&self) -> Result<(), IggyError> {
         let start_stream_id = self.args().start_stream_id();
         let number_of_streams = self.args().number_of_streams();
-        let client = self.client_factory().create_client().await;
+        let client = self.client().mock().await;
         let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
         login_root(&client).await;
         let streams = client.get_streams(&GetStreams {}).await?;

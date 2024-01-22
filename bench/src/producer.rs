@@ -5,7 +5,7 @@ use iggy::clients::client::{IggyClient, IggyClientConfig};
 use iggy::error::IggyError;
 use iggy::identifier::Identifier;
 use iggy::messages::send_messages::{Message, Partitioning, SendMessages};
-use integration::test_server::{login_root, ClientFactory};
+use integration::test_server::{login_root, MockClient};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -13,7 +13,7 @@ use tokio::time::Instant;
 use tracing::info;
 
 pub struct Producer {
-    client_factory: Arc<dyn ClientFactory>,
+    client_factory: Arc<dyn MockClient>,
     producer_id: u32,
     stream_id: u32,
     messages_per_batch: u32,
@@ -23,7 +23,7 @@ pub struct Producer {
 
 impl Producer {
     pub fn new(
-        client_factory: Arc<dyn ClientFactory>,
+        client_factory: Arc<dyn MockClient>,
         producer_id: u32,
         stream_id: u32,
         messages_per_batch: u32,
@@ -44,7 +44,7 @@ impl Producer {
         let topic_id: u32 = 1;
         let partition_id: u32 = 1;
         let total_messages = (self.messages_per_batch * self.message_batches) as u64;
-        let client = self.client_factory.create_client().await;
+        let client = self.client_factory.mock().await;
         let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
         login_root(&client).await;
         info!(

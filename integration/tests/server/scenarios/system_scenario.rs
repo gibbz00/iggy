@@ -38,7 +38,7 @@ use iggy::topics::update_topic::UpdateTopic;
 use iggy::users::defaults::*;
 use iggy::users::login_user::LoginUser;
 use iggy::utils::byte_size::IggyByteSize;
-use integration::test_server::{assert_clean_system, ClientFactory};
+use integration::test_server::{assert_clean_system, MockClient};
 
 const STREAM_ID: u32 = 1;
 const TOPIC_ID: u32 = 1;
@@ -52,8 +52,8 @@ const CONSUMER_GROUP_ID: u32 = 10;
 const CONSUMER_GROUP_NAME: &str = "test-consumer-group";
 const MESSAGES_COUNT: u32 = 1000;
 
-pub async fn run(client_factory: &dyn ClientFactory) {
-    let client = client_factory.create_client().await;
+pub async fn run(client_factory: &dyn MockClient) {
+    let client = client_factory.mock().await;
     let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
 
     // 0. Ping server

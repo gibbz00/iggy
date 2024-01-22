@@ -9,7 +9,7 @@ use iggy::models::header::{HeaderKey, HeaderValue};
 use iggy::streams::create_stream::CreateStream;
 use iggy::streams::delete_stream::DeleteStream;
 use iggy::topics::create_topic::CreateTopic;
-use integration::test_server::{assert_clean_system, login_root, ClientFactory};
+use integration::test_server::{assert_clean_system, login_root, MockClient};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -21,8 +21,8 @@ const PARTITIONS_COUNT: u32 = 3;
 const MESSAGES_COUNT: u32 = 1000;
 const PARTITION_ID: u32 = 1;
 
-pub async fn run(client_factory: &dyn ClientFactory) {
-    let client = client_factory.create_client().await;
+pub async fn run(client_factory: &dyn MockClient) {
+    let client = client_factory.mock().await;
     let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
 
     login_root(&client).await;

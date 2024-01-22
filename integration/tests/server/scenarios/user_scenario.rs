@@ -18,10 +18,10 @@ use iggy::users::login_user::LoginUser;
 use iggy::users::logout_user::LogoutUser;
 use iggy::users::update_permissions::UpdatePermissions;
 use iggy::users::update_user::UpdateUser;
-use integration::test_server::{assert_clean_system, ClientFactory};
+use integration::test_server::{assert_clean_system, MockClient};
 
-pub async fn run(client_factory: &dyn ClientFactory) {
-    let client = client_factory.create_client().await;
+pub async fn run(client_factory: &dyn MockClient) {
+    let client = client_factory.mock().await;
     let client = IggyClient::create(client, IggyClientConfig::default(), None, None, None);
 
     // 1. Ping should be allowed for unauthenticated users

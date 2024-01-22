@@ -1,27 +1,16 @@
-use crate::test_server::ClientFactory;
-use async_trait::async_trait;
+use crate::test_server::MockClient;
 use iggy::client::Client;
 use iggy::quic::client::QuicClient;
 use iggy::quic::config::QuicClientConfig;
-use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub struct QuicClientFactory {
-    pub server_addr: String,
-}
-
-#[async_trait]
-impl ClientFactory for QuicClientFactory {
-    async fn create_client(&self) -> Box<dyn Client> {
+impl MockClient for QuicClient {
+    async fn mock(server_address: &str) -> Self {
         let config = QuicClientConfig {
-            server_address: self.server_addr.clone(),
+            server_address: server_address.to_string(),
             ..QuicClientConfig::default()
         };
-        let client = QuicClient::create(Arc::new(config)).unwrap();
+        let client = QuicClient::create(config).unwrap();
         client.connect().await.unwrap();
-        Box::new(client)
+        client
     }
 }
-
-unsafe impl Send for QuicClientFactory {}
-unsafe impl Sync for QuicClientFactory {}
