@@ -10,7 +10,6 @@ use iggy::users::defaults::*;
 use iggy::users::login_user::LoginUser;
 use std::env;
 use std::error::Error;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::info;
@@ -27,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         server_address: get_tcp_server_addr(),
         ..TcpClientConfig::default()
     };
-    let tcp_client = Box::new(TcpClient::create(Arc::new(tcp_client_config)).unwrap());
+    let tcp_client = TcpClient::create(tcp_client_config).unwrap();
     let client = IggyClient::create(tcp_client, IggyClientConfig::default(), None, None, None);
 
     // Or, instead of above lines, you can just use below code, which will create a Iggy
@@ -45,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     consume_messages(&client).await
 }
 
-async fn consume_messages(client: &dyn Client) -> Result<(), Box<dyn Error>> {
+async fn consume_messages(client: &impl Client) -> Result<(), Box<dyn Error>> {
     let interval = Duration::from_millis(500);
     info!(
         "Messages will be consumed from stream: {}, topic: {}, partition: {} with interval {} ms.",

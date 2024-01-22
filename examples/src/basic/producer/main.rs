@@ -1,14 +1,15 @@
 use clap::Parser;
 use iggy::client::Client;
-use iggy::client_provider;
-use iggy::client_provider::ClientProviderConfig;
+use iggy::client_provider::ClientConfig;
+use iggy::http::client::HttpClient;
 use iggy::identifier::Identifier;
 use iggy::messages::send_messages::{Message, Partitioning, SendMessages};
+use iggy::quic::client::QuicClient;
+use iggy::tcp::client::TcpClient;
 use iggy_examples::shared::args::Args;
 use iggy_examples::shared::system;
 use std::error::Error;
 use std::str::FromStr;
-use std::sync::Arc;
 use tracing::info;
 
 #[tokio::main]
@@ -19,15 +20,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Basic producer has started, selected transport: {}",
         args.transport
     );
-    let client_provider_config = Arc::new(ClientProviderConfig::from_args(args.to_sdk_args())?);
-    let client = client_provider::get_raw_client(client_provider_config).await?;
-    let client = client.as_ref();
-    system::login_root(client).await;
-    system::init_by_producer(&args, client).await?;
-    produce_messages(&args, client).await
+
+    match args.transport.as_str() {
+        "tcp" => run::<TcpClient>(&args).await,
+        "http" => run::<HttpClient>(&args).await,
+        "quic" => run::<QuicClient>(&args).await,
+        // TEMP: args.transport should be an enum
+        _ => unimplemented!(),
+    }
 }
 
-async fn produce_messages(args: &Args, client: &dyn Client) -> Result<(), Box<dyn Error>> {
+async fn run<C: Client>(args: &Args) -> Result<(), Box<dyn Error>> {
+    let client_config = <C::Config as ClientConfig>::from_args(args.to_sdk_args());
+    let client = C::from_config(client_config)?;
+
+    system::login_root(&client).await;
+    system::init_by_producer(args, &client).await?;
+    produce_messages(args, &client).await
+}
+
+async fn produce_messages(args: &Args, client: &impl Client) -> Result<(), Box<dyn Error>> {
     info!(
         "Messages will be sent to stream: {}, topic: {}, partition: {} with interval {} ms.",
         args.stream_id, args.topic_id, args.partition_id, args.interval

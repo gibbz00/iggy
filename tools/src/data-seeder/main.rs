@@ -5,7 +5,6 @@ use clap::Parser;
 use iggy::args::Args;
 use iggy::client::UserClient;
 use iggy::client_provider;
-use iggy::client_provider::ClientProviderConfig;
 use iggy::clients::client::{IggyClient, IggyClientConfig};
 use iggy::users::login_user::LoginUser;
 use iggy::utils::crypto::{Aes256GcmEncryptor, Encryptor};

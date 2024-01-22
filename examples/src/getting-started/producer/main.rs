@@ -11,7 +11,6 @@ use iggy::users::login_user::LoginUser;
 use std::env;
 use std::error::Error;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{info, warn};
@@ -29,7 +28,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         server_address: get_tcp_server_addr(),
         ..TcpClientConfig::default()
     };
-    let tcp_client = Box::new(TcpClient::create(Arc::new(tcp_client_config)).unwrap());
+    let tcp_client = TcpClient::create(tcp_client_config).unwrap();
     let client = IggyClient::create(tcp_client, IggyClientConfig::default(), None, None, None);
 
     // Or, instead of above lines, you can just use below code, which will create a Iggy
@@ -47,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     produce_messages(&client).await
 }
 
-async fn init_system(client: &IggyClient) {
+async fn init_system(client: &IggyClient<TcpClient>) {
     match client
         .create_stream(&CreateStream {
             stream_id: Some(STREAM_ID),
@@ -76,7 +75,7 @@ async fn init_system(client: &IggyClient) {
     }
 }
 
-async fn produce_messages(client: &dyn Client) -> Result<(), Box<dyn Error>> {
+async fn produce_messages(client: &impl Client) -> Result<(), Box<dyn Error>> {
     let interval = Duration::from_millis(500);
     info!(
         "Messages will be sent to stream: {}, topic: {}, partition: {} with interval {} ms.",

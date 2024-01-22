@@ -14,7 +14,7 @@ use iggy::users::login_user::LoginUser;
 use tracing::info;
 type MessageHandler = dyn Fn(&Message) -> Result<(), Box<dyn std::error::Error>>;
 
-pub async fn login_root(client: &dyn Client) {
+pub async fn login_root(client: &impl Client) {
     client
         .login_user(&LoginUser {
             username: DEFAULT_ROOT_USERNAME.to_string(),
@@ -24,7 +24,7 @@ pub async fn login_root(client: &dyn Client) {
         .unwrap();
 }
 
-pub async fn init_by_consumer(args: &Args, client: &dyn Client) {
+pub async fn init_by_consumer(args: &Args, client: &impl Client) {
     let (stream_id, topic_id, partition_id) = (args.stream_id, args.topic_id, args.partition_id);
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
     loop {
@@ -66,7 +66,7 @@ pub async fn init_by_consumer(args: &Args, client: &dyn Client) {
     }
 }
 
-pub async fn init_by_producer(args: &Args, client: &dyn Client) -> Result<(), IggyError> {
+pub async fn init_by_producer(args: &Args, client: &impl Client) -> Result<(), IggyError> {
     let stream = client
         .get_stream(&GetStream {
             stream_id: Identifier::numeric(args.stream_id)?,
@@ -99,7 +99,7 @@ pub async fn init_by_producer(args: &Args, client: &dyn Client) -> Result<(), Ig
 
 pub async fn consume_messages(
     args: &Args,
-    client: &dyn Client,
+    client: &impl Client,
     handle_message: &MessageHandler,
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!("Messages will be polled by consumer: {} from stream: {}, topic: {}, partition: {} with interval {} ms.",
