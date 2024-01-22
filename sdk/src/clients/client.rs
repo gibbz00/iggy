@@ -313,50 +313,58 @@ impl<C: Client> IggyClient<C> {
             }
         }
 
-        tokio::spawn(async move {
-            loop {
-                sleep(interval).await;
-                let client = client.read().await;
-                let polled_messages = client.poll_messages(&poll_messages).await;
-                if let Err(error) = polled_messages {
-                    error!("There was an error while polling messages: {:?}", error);
-                    continue;
-                }
+        todo!()
 
-                let messages = polled_messages.unwrap().messages;
-                if messages.is_empty() {
-                    continue;
-                }
+        // tokio::spawn(async move {
+        //     loop {
+        //         tokio::time::sleep(interval).await;
 
-                let mut current_offset = 0;
-                for message in messages {
-                    current_offset = message.offset;
-                    // Send a message to the subscribed channel (if created), otherwise to the provided closure or message handler.
-                    if let Some(sender) = &message_channel_sender {
-                        if sender.send_async(message).await.is_err() {
-                            error!("Error when sending a message to the channel.");
-                        }
-                    } else if let Some(on_message) = &on_message {
-                        on_message(message);
-                    } else if let Some(message_handler) = &message_handler {
-                        message_handler.handle(message);
-                    } else {
-                        warn!("Received a message with ID: {} at offset: {} which won't be processed. Consider providing the custom `MessageHandler` trait implementation or `on_message` closure.", message.id, message.offset);
-                    }
-                    if store_offset_after_processing_each_message {
-                        Self::store_offset(&*client, &poll_messages, current_offset).await;
-                    }
-                }
+        //         let client = client.read().await;
+        //         let polled_message_result = client.poll_messages(&poll_messages).await;
 
-                if store_offset_when_messages_are_processed {
-                    Self::store_offset(&*client, &poll_messages, current_offset).await;
-                }
+        //         match polled_message_result {
+        //             Ok(polled_messages) => {
+        //                 let messages = polled_messages.messages;
 
-                if poll_messages.strategy.kind == PollingKind::Offset {
-                    poll_messages.strategy.value = current_offset + 1;
-                }
-            }
-        })
+        //                 if messages.is_empty() {
+        //                     continue;
+        //                 }
+
+        //                 let mut current_offset = 0;
+        //                 for message in messages {
+        //                     current_offset = message.offset;
+        //                     // Send a message to the subscribed channel (if created), otherwise to the provided closure or message handler.
+        //                     if let Some(sender) = &message_channel_sender {
+        //                         if sender.send_async(message).await.is_err() {
+        //                             error!("Error when sending a message to the channel.");
+        //                         }
+        //                     } else if let Some(on_message) = &on_message {
+        //                         on_message(message);
+        //                     } else if let Some(message_handler) = &message_handler {
+        //                         message_handler.handle(message);
+        //                     } else {
+        //                         warn!("Received a message with ID: {} at offset: {} which won't be processed. Consider providing the custom `MessageHandler` trait implementation or `on_message` closure.", message.id, message.offset);
+        //                     }
+        //                     if store_offset_after_processing_each_message {
+        //                         Self::store_offset(&*client, &poll_messages, current_offset).await;
+        //                     }
+        //                 }
+
+        //                 if store_offset_when_messages_are_processed {
+        //                     Self::store_offset(&*client, &poll_messages, current_offset).await;
+        //                 }
+
+        //                 if poll_messages.strategy.kind == PollingKind::Offset {
+        //                     poll_messages.strategy.value = current_offset + 1;
+        //                 }
+        //             }
+        //             Err(error) => {
+        //                 error!("There was an error while polling messages: {:?}", error);
+        //                 continue;
+        //             }
+        //         }
+        //     }
+        // })
     }
 
     /// Sends the provided messages in the background using the custom partitioner implementation.
@@ -396,98 +404,99 @@ impl<C: Client> IggyClient<C> {
         client: Arc<RwLock<C>>,
         send_messages_batch: Arc<Mutex<SendMessagesBatch>>,
     ) {
-        tokio::spawn(async move {
-            let max_messages = max_messages as usize;
-            let interval = Duration::from_millis(interval);
-            loop {
-                sleep(interval).await;
-                let mut send_messages_batch = send_messages_batch.lock().await;
-                if send_messages_batch.commands.is_empty() {
-                    continue;
-                }
+        todo!()
+        // tokio::spawn(async move {
+        //     let max_messages = max_messages as usize;
+        //     let interval = Duration::from_millis(interval);
+        //     loop {
+        //         sleep(interval).await;
+        //         let mut send_messages_batch = send_messages_batch.lock().await;
+        //         if send_messages_batch.commands.is_empty() {
+        //             continue;
+        //         }
 
-                let mut initialized = false;
-                let mut stream_id = Identifier::numeric(1).unwrap();
-                let mut topic_id = Identifier::numeric(1).unwrap();
-                let mut key = Partitioning::partition_id(1);
-                let mut batch_messages = true;
+        //         let mut initialized = false;
+        //         let mut stream_id = Identifier::numeric(1).unwrap();
+        //         let mut topic_id = Identifier::numeric(1).unwrap();
+        //         let mut key = Partitioning::partition_id(1);
+        //         let mut batch_messages = true;
 
-                for send_messages in &send_messages_batch.commands {
-                    if !initialized {
-                        if send_messages.partitioning.kind != PartitioningKind::PartitionId {
-                            batch_messages = false;
-                            break;
-                        }
+        //         for send_messages in &send_messages_batch.commands {
+        //             if !initialized {
+        //                 if send_messages.partitioning.kind != PartitioningKind::PartitionId {
+        //                     batch_messages = false;
+        //                     break;
+        //                 }
 
-                        stream_id = Identifier::from_identifier(&send_messages.stream_id);
-                        topic_id = Identifier::from_identifier(&send_messages.topic_id);
-                        key.value = send_messages.partitioning.value.clone();
-                        initialized = true;
-                    }
+        //                 stream_id = Identifier::from_identifier(&send_messages.stream_id);
+        //                 topic_id = Identifier::from_identifier(&send_messages.topic_id);
+        //                 key.value = send_messages.partitioning.value.clone();
+        //                 initialized = true;
+        //             }
 
-                    // Batching the messages is only possible for the same stream, topic and partition.
-                    if send_messages.stream_id != stream_id
-                        || send_messages.topic_id != topic_id
-                        || send_messages.partitioning.kind != PartitioningKind::PartitionId
-                        || send_messages.partitioning.value != key.value
-                    {
-                        batch_messages = false;
-                        break;
-                    }
-                }
+        //             // Batching the messages is only possible for the same stream, topic and partition.
+        //             if send_messages.stream_id != stream_id
+        //                 || send_messages.topic_id != topic_id
+        //                 || send_messages.partitioning.kind != PartitioningKind::PartitionId
+        //                 || send_messages.partitioning.value != key.value
+        //             {
+        //                 batch_messages = false;
+        //                 break;
+        //             }
+        //         }
 
-                if !batch_messages {
-                    for send_messages in &mut send_messages_batch.commands {
-                        if let Err(error) = client.read().await.send_messages(send_messages).await {
-                            error!("There was an error when sending the messages: {:?}", error);
-                        }
-                    }
-                    send_messages_batch.commands.clear();
-                    continue;
-                }
+        //         if !batch_messages {
+        //             for send_messages in &mut send_messages_batch.commands {
+        //                 if let Err(error) = client.read().await.send_messages(send_messages).await {
+        //                     error!("There was an error when sending the messages: {:?}", error);
+        //                 }
+        //             }
+        //             send_messages_batch.commands.clear();
+        //             continue;
+        //         }
 
-                let mut batches = VecDeque::new();
-                let mut messages = Vec::new();
-                while let Some(send_messages) = send_messages_batch.commands.pop_front() {
-                    messages.extend(send_messages.messages);
-                    if messages.len() >= max_messages {
-                        batches.push_back(messages);
-                        messages = Vec::new();
-                    }
-                }
+        //         let mut batches = VecDeque::new();
+        //         let mut messages = Vec::new();
+        //         while let Some(send_messages) = send_messages_batch.commands.pop_front() {
+        //             messages.extend(send_messages.messages);
+        //             if messages.len() >= max_messages {
+        //                 batches.push_back(messages);
+        //                 messages = Vec::new();
+        //             }
+        //         }
 
-                if !messages.is_empty() {
-                    batches.push_back(messages);
-                }
+        //         if !messages.is_empty() {
+        //             batches.push_back(messages);
+        //         }
 
-                while let Some(messages) = batches.pop_front() {
-                    let mut send_messages = SendMessages {
-                        stream_id: Identifier::from_identifier(&stream_id),
-                        topic_id: Identifier::from_identifier(&topic_id),
-                        partitioning: Partitioning {
-                            kind: PartitioningKind::PartitionId,
-                            length: 4,
-                            value: key.value.clone(),
-                        },
-                        messages,
-                    };
+        //         while let Some(messages) = batches.pop_front() {
+        //             let mut send_messages = SendMessages {
+        //                 stream_id: Identifier::from_identifier(&stream_id),
+        //                 topic_id: Identifier::from_identifier(&topic_id),
+        //                 partitioning: Partitioning {
+        //                     kind: PartitioningKind::PartitionId,
+        //                     length: 4,
+        //                     value: key.value.clone(),
+        //                 },
+        //                 messages,
+        //             };
 
-                    if let Err(error) = client.read().await.send_messages(&mut send_messages).await
-                    {
-                        error!(
-                            "There was an error when sending the messages batch: {:?}",
-                            error
-                        );
+        //             if let Err(error) = client.read().await.send_messages(&mut send_messages).await
+        //             {
+        //                 error!(
+        //                     "There was an error when sending the messages batch: {:?}",
+        //                     error
+        //                 );
 
-                        if !send_messages.messages.is_empty() {
-                            batches.push_back(send_messages.messages);
-                        }
-                    }
-                }
+        //                 if !send_messages.messages.is_empty() {
+        //                     batches.push_back(send_messages.messages);
+        //                 }
+        //             }
+        //         }
 
-                send_messages_batch.commands.clear();
-            }
-        });
+        //         send_messages_batch.commands.clear();
+        //     }
+        // });
     }
 }
 
@@ -575,12 +584,13 @@ impl<C: Client> PersonalAccessTokenClient for IggyClient<C> {
     }
 }
 
-impl<C: Client + Default> Client for IggyClient<C> {
+impl<C: Client> Client for IggyClient<C> {
     type Config = IggyClientConfig;
 
     // HELP: Don't think IggyClient should implement Client, this acts as stub
     fn from_config(config: Self::Config) -> Result<Self, IggyError> {
-        Ok(Self::builder(C::default()).build())
+        todo!()
+        // Ok(Self::builder(C::default()).build())
     }
 
     async fn connect(&self) -> Result<(), IggyError> {
